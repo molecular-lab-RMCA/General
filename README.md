@@ -1,6 +1,6 @@
-# General
+# Shared Resources and Publications
 
-An index of other publications and shared research resources from the molecular laboratory at RMCA.
+Shared tools, research resources and publications that support several projects or are not listed under a specific project.
 
 ## Public repositories
 
@@ -10,6 +10,6 @@ Public resources will be listed here as they become available.
 
 ## Funding
 
-Funding acknowledgements belong to the individual studies and repositories. General is an index category and has no single project code or funding agency.
+Funding acknowledgements are provided in the individual study and resource repositories.
 
 [Laboratory homepage](https://github.com/molecular-lab-RMCA)
