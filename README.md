@@ -6,6 +6,8 @@ An index of other publications and shared research resources from the molecular 
 
 Public resources will be listed here as they become available.
 
+[Internal repositories (restricted access)](https://github.com/molecular-lab-RMCA/.github-private/blob/main/General.md)
+
 ## Funding
 
 Funding acknowledgements belong to the individual studies and repositories. General is an index category and has no single project code or funding agency.
