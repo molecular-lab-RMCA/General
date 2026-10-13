@@ -2,6 +2,10 @@
 
 Shared tools, research resources and publications that support several projects or are not listed under a specific project.
 
+## Laboratory tools
+
+[Auditable FASTQ renaming for DARWIN](tools/fastq_rename_audit/README.md): a reversible Bash utility with an approved mapping file, SHA256 verification, and a detailed operation log. Source files and documentation can be maintained directly in this repository.
+
 ## Public repositories
 
 Public resources will be listed here as they become available.
