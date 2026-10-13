@@ -1,0 +1,132 @@
+AUDITABLE FASTQ RENAMING FOR DARWIN
+===================================
+
+Purpose
+-------
+Rename local FASTQ files to explicitly approved new filenames for linking to
+DARWIN, without changing sequence content or losing the old names. Designed
+for an RMCA lab computer running Linux or Windows Subsystem for Linux (WSL).
+
+Requirements
+------------
+Bash 4 or newer and GNU tools (sha256sum, stat, mv, cp, sed). The script needs
+read/write access to the FASTQ directory and an audit directory. Make a normal
+backup of original FASTQ files before using it. Do not run while files are
+being uploaded, downloaded, or used by another process.
+
+1. Prepare and approve the mapping
+----------------------------------
+Create a plain text TAB-SEPARATED file called mapping.tsv. The header and column
+names must be exactly:
+
+old_filename<TAB>new_filename
+OriginalSampleA_L001_R1_001.fastq.gz<TAB>NewSample001_L001_R1_001.fastq.gz
+OriginalSampleA_L001_R2_001.fastq.gz<TAB>NewSample001_L001_R2_001.fastq.gz
+
+Use ACTUAL tab characters, not the literal text <TAB>. A working example is
+included as mapping_EXAMPLE.tsv. This is an example only, not actual DARWIN
+information. List every FASTQ you want renamed on a separate row, including
+both R1 and R2 and all sequencing lanes. Both columns are complete filenames.
+Do not put paths or folder names in either column.
+
+Record the mapping SHA256 shown by the check command with the reviewer's approval.
+The run command prints its own mapping SHA256, so you can confirm it is the
+same approved version.
+
+Before proceeding, compare every proposed new sample identifier against the
+relevant DARWIN specimen or DNA identifier and against the original sequencing
+provider sample sheet. Have a second person review and approve the mapping,
+especially where old sequencing labels are reused or look similar. Archive
+that approval with the mapping. This human identity check cannot be automated
+reliably from file names alone.
+
+2. Run preflight validation without changing anything
+-----------------------------------------------------
+
+bash rename_fastq.sh check /path/to/mapping.tsv /path/to/fastq_folder
+
+The check rejects missing originals, repeated original or new names, existing
+destinations, differing FASTQ extensions, common R1/R2 swaps, and mismatched
+paired-file sample labels. Only ASCII letters, numbers, dots, underscores,
+spaces, plus signs and hyphens are accepted in filenames. Other source names
+need deliberate manual handling or extension of the safety rules.
+
+3. Execute the approved mapping and keep its audit folder
+----------------------------------------------------------
+
+bash rename_fastq.sh run /path/to/mapping.tsv /path/to/fastq_folder /path/to/audit_folder
+
+The audit folder MUST be outside the FASTQ folder. Each execution creates a
+uniquely named subfolder such as:
+
+audit_folder/fastq_rename_20261013T120000Z_XY0123/
+
+For each file, the script computes SHA256 and byte size before renaming,
+records a MOVE_BEGIN and MOVE_DONE event, renames within the SAME folder
+without overwriting destinations, computes SHA256 and byte size afterward,
+and verifies an exact match. On success, status.txt reads COMPLETE.
+
+The audit subfolder contains:
+
+approved_mapping.tsv   Exact copied input mapping
+rename_fastq.sh        Exact copy of the script used
+context.txt            UTC date, username, host, paths, Bash version
+data_dir.txt           Exact directory holding FASTQs
+manifest.tsv           Old name, new name, original size and SHA256
+events.tsv             UTC event log, one event per attempted or completed move
+verification.tsv       New name, size and SHA256 after renaming
+status.txt             COMPLETE or INCOMPLETE
+provenance.sha256      Checksums of original audit inputs and manifest
+run_finished.sha256    Checksums of completed event log, verification and status
+
+A failed or interrupted run retains INCOMPLETE status. Inspect the folder and
+use the undo command if necessary. Do NOT simply start another run over it.
+
+4. Independently verify an audit bundle
+---------------------------------------
+
+cd /path/to/audit_folder/fastq_rename_RUN_ID
+sha256sum -c provenance.sha256 run_finished.sha256
+
+All files should report OK. Copy the complete audit subfolder and the curator's
+mapping approval to controlled, versioned or read-only institutional storage.
+Checksums in a locally editable directory can be altered too: for meaningful
+tamper resistance, keep a separate independently controlled copy.
+
+5. Reverse a run without destroying its history
+-----------------------------------------------
+
+bash rename_fastq.sh undo /path/to/audit_folder/fastq_rename_RUN_ID
+
+Undo first verifies that every original or renamed file has exactly the
+expected content, then restores original names where applicable. It rejects
+files edited since the rename and never overwrites an existing original.
+The original audit remains unchanged. Undo adds undo_events.tsv,
+undo_status.txt and undo_finished.sha256. A partial undo can be safely retried
+after investigating the problem.
+
+After undo, verify both the original run and undo log with:
+
+cd /path/to/audit_folder/fastq_rename_RUN_ID
+sha256sum -c provenance.sha256 run_finished.sha256 undo_finished.sha256
+
+IMPORTANT NOTES
+---------------
+A valid checksum verifies that bytes were preserved during renaming. It does
+NOT verify that the biological sample was assigned the correct new identity.
+Only the approved mapping and its independent checking can establish this.
+
+Using the new filenames in the DARWIN template does not replace the need to
+preserve original FASTQ names, sequencing sample sheet, and corresponding AB
+or other unique specimen identifier as distinct pieces of provenance.
+
+Checksums read the whole FASTQ twice, which can take substantial time for very
+large datasets. The actual rename in the same folder is nearly instantaneous.
+
+Do not modify the FASTQ files or rename them manually while the audit workflow
+is running. If you need to correct a mapping after execution, undo the run,
+correct the approved mapping and execute a fresh run with a new audit ID.
+
+If power fails mid-run, the lock folder .fastq_rename.lock may remain. Check
+that no rename process is running, inspect the INCOMPLETE audit, and only then
+remove a stale lock manually. Never remove a lock from an active run.
