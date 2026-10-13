@@ -1,0 +1,5 @@
+old_filename	new_filename
+OriginalSampleA_L001_R1_001.fastq.gz	NewSample001_L001_R1_001.fastq.gz
+OriginalSampleA_L001_R2_001.fastq.gz	NewSample001_L001_R2_001.fastq.gz
+OriginalSampleB_L001_R1_001.fastq.gz	NewSample002_L001_R1_001.fastq.gz
+OriginalSampleB_L001_R2_001.fastq.gz	NewSample002_L001_R2_001.fastq.gz
